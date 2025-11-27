@@ -10,6 +10,10 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: practicaclase
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,22 +29,19 @@ jobs:
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          path: practicaclase/vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('practicaclase/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-php-
 
       - name: Install Composer dependencies
-        run: composer install
+        run: composer install --no-progress --prefer-dist --no-interaction
 
-      - name: Set up the database
+      - name: Prepare environment and database
         run: |
           cp .env.example .env
           php artisan key:generate
           php artisan migrate --env=testing
-
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --no-interaction
 
       # ---------- Run Tests ----------
       - name: Run tests
@@ -48,10 +49,8 @@ jobs:
 
       # ---------- PHPStan / Larastan ----------
       - name: Run PHPStan (Larastan)
-        run: |
-          vendor/bin/phpstan analyse --configuration=phpstan.neon
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon
 
-      # ---------- Laravel Pint (code style) ----------
+      # ---------- Laravel Pint ----------
       - name: Run Laravel Pint
-        run: |
-          vendor/bin/pint --test
+        run: vendor/bin/pint --test
